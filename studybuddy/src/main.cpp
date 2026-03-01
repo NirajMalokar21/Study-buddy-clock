@@ -4,30 +4,50 @@
 #include "OLED.h"
 
 
-const int baudRate = 115200;
+// Local State
 
+// The device's current status. Update this from button presses or any other
+// input and call publishStatus() — the broker fans it out to all peers.
+static BuddyStatus currentStatus = BuddyStatus::HANG_OUT;
+
+// How often to re-publish status as a heartbeat (ms).
+// Keeps retained state fresh if the broker restarts and loses retained data.
+static const unsigned long HEARTBEAT_MS = 30000;
+
+// Setup
 void setup() {
-  Serial.begin(baudRate);
+  Serial.begin(115200);
   delay(2000);
-
-  Serial.println("Buddy initiated");
+  Serial.println("=== Study Buddy Starting ===");
 
   wifiConnect();
 
+  // Increase the PubSubClient buffer from its 256-byte default.
+  client.setBufferSize(512);
   client.setServer(SERVER_IP, PORT);
   client.setCallback(mqttCallback);
+
+  reconnectServer();
+
+  // Publish initial status so peers see this device immediately.
+  publishStatus(currentStatus);
 }
 
+// Loop
 void loop() {
   if (!client.connected()) {
     reconnectServer();
+    publishStatus(currentStatus);  // Re-announce after reconnect
   }
 
   client.loop();
 
-  static unsigned long lastMsg = 0;
-  if (millis() - lastMsg > 5000) {
-    lastMsg = millis();
-    client.publish("studybuddy/B/state", "{ \"state\": \"THIS IS MAHIN\" }");
+  // Heartbeat
+  static unsigned long lastHeartbeat = 0;
+  if (millis() - lastHeartbeat > HEARTBEAT_MS) {
+    lastHeartbeat = millis();
+    publishStatus(currentStatus);
   }
+
+  // TODO: Physical input handling would go here
 }
