@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "connection.h"
 #include "secrets.h"
+#include "OLED.h"
+
 
 const int baudRate = 115200;
 

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "connection.h"
 #include "secrets.h"
+#include "OLED.h"
 
 // Define global objects 
 WiFiClient espClient;
